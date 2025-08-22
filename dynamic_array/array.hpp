@@ -42,10 +42,65 @@ class DynamicArray {
             capacity_ = new_capacity_;
         }
 
+        void swap(DynamicArray& other) {
+            std::swap(size_, other.size_);
+            std::swap(capacity_, other.capacity_);
+            std::swap(data_, other.data_);
+        }
+
     public:
         DynamicArray() : capacity_(DEFAULT_CAPACITY), size_(0), data_(allocate_raw(DEFAULT_CAPACITY)) {};
 
         explicit DynamicArray(size_t capacity) : capacity_(capacity), size_(0), data_(allocate_raw(capacity_)) {};
+
+        // destructor
+        ~DynamicArray() {
+            destroy_range(data_, size_);
+            deallocate_raw(data_);
+        }
+
+        // copy and move
+        DynamicArray(const DynamicArray& other) {
+            capacity_ = other.capacity_;
+            size_ = other.size_;
+            data_ = allocate_raw(capacity_);
+
+            for (size_t i = 0; i < size_; ++i) {
+                ::new (static_cast<void*>(data_ + i)) T(other.data_[i]);
+            }
+        }
+
+        DynamicArray& operator=(const DynamicArray& other) {
+            if (this == &other) return *this;
+            DynamicArray tmp(other);
+            swap(tmp);
+            return *this;
+        }
+
+        DynamicArray(DynamicArray&& other) noexcept 
+            : capacity_(other.capacity_), size_(other.size_), data_(other.data_)
+        {
+            other.capacity_ = 0;
+            other.size_ = 0;
+            other.data_ = nullptr;
+        }
+
+        DynamicArray& operator=(DynamicArray&& other) noexcept {
+            if (this == &other) return *this;
+
+            destroy_range(data_, size_);
+            deallocate_raw(data_);
+
+            capacity_ = other.capacity_;
+            size_ = other.size_;
+            data_ = other.data_;
+
+            other.capacity_ = 0;
+            other.size_ = 0;
+            other.data_ = nullptr;
+
+            return *this;
+        }
 
         void push_back(const T& value) {
             if (size_ == capacity_) grow();
