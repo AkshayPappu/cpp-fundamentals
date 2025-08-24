@@ -2,14 +2,17 @@
 #include <optional>
 #include <cstddef>
 #include <utility>
+#include <algorithm>
 
+template <typename T>
+class DLL;
 
 template <typename T>
 struct Node {
     T value;
     Node<T>* prev;
     Node<T>* next;
-    void* owner;
+    DLL<T>* owner;
 
     Node() : value{}, prev(nullptr), next(nullptr), owner(nullptr) {}
     Node(T value) : value(value), prev(nullptr), next(nullptr), owner(nullptr) {}
@@ -21,6 +24,12 @@ class DLL {
         Node<T>* head;
         Node<T>* tail;
         size_t size_;
+
+        void swap(DLL& other) noexcept {
+            std::swap(head, other.head);
+            std::swap(tail, other.tail);
+            std::swap(size_, other.size_);
+        }
     public:
         DLL() {
             head = new Node<T>();
@@ -49,6 +58,55 @@ class DLL {
             tail = nullptr;
             size_ = 0;
         }
+
+        // copy and move
+        DLL(const DLL& other) : head(nullptr), tail(nullptr), size_(0) {
+            head = new Node<T>();
+            tail = new Node<T>();
+            head->next = tail; tail->prev = head;
+            head->prev = nullptr; tail->next = nullptr;
+            head->owner = this; tail->owner = this;
+
+            for (Node<T>* p = other.head->next; p != other.tail; p = p->next) {
+                push_back(p->value);
+            }
+        };
+
+        DLL& operator=(const DLL& other) {
+            if (this == &other) return *this;
+            DLL tmp(other);
+            swap(tmp);
+            return *this;
+        };
+
+
+        DLL(DLL&& other) noexcept : head(other.head), tail(other.tail), size_(other.size_) {
+            other.head = nullptr;
+            other.tail = nullptr;
+            other.size_ = 0;
+        };
+
+        DLL& operator=(DLL&& other) noexcept {
+            if (this == &other) return *this;
+            Node<T>* cur = head ? head->next : nullptr;
+            while (cur && cur != tail) {
+                Node<T>* next = cur->next;
+                delete cur;
+                cur = next;
+            }
+            delete head;
+            delete tail;
+
+            head = other.head;
+            tail = other.tail;
+            size_ = other.size_;
+
+            other.head = nullptr;
+            other.tail = nullptr;
+            other.size_ = 0;
+            
+            return *this;
+        };
 
         void push_front(T value) {
             Node<T>* new_node = new Node<T>(value);
