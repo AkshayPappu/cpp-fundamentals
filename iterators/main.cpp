@@ -13,9 +13,12 @@ int main() {
     }
 
     StreamIterator si(&f);
-    while (si()) {
-        cout << si.val() << "\n";
+    StreamIterator si2 = si;
+    StreamIterator eos;
+    
+    while (si != eos) {
+        cout << *si << "\n";
+        ++si;
     }
-
     return 0;
 }
