@@ -4,18 +4,22 @@
 #include <memory>
 #include <thread>
 
-
 static int CAPACITY = 100;
-static int PRODUCERS = 100;
-static int CONSUMERS = 150;
+static int PRODUCERS = 200;
+static int CONSUMERS = 100;
 
 std::mutex io_mu;
 
 template <typename T>
-void produce(SafeQueue<T>& sq, T&& obj, int i) {
-    sq.push(std::forward<T>(obj));
+void produce(SafeQueue<T>& sq, T obj, int i) {
+    bool ok = sq.push(std::move(obj));
     std::lock_guard<std::mutex> lk(io_mu);
-    std::cout << "thread " << i << " pushing value\n";
+    if (ok) {
+        std::cout << "thread " << i << " pushing value " << obj << "\n";
+    } else {
+        std::cout << "thread " << i << " timed out\n";
+    }
+    
 }
 
 template <typename T>
@@ -23,7 +27,7 @@ void consume(SafeQueue<T>& sq, int i) {
     std::shared_ptr<T> sp = sq.pop();
     std::lock_guard<std::mutex> lk(io_mu);
     if (sp != nullptr) {
-        std::cout << "thread " << i << " popping value\n";
+        std::cout << "thread " << i << " popping value " << *sp << "\n";
     } else {
         std::cout << "thread " << i << " popping null\n";
     }
