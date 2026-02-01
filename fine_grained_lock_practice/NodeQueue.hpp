@@ -1,0 +1,65 @@
+#pragma once
+#include <mutex>
+#include <memory>
+
+
+/*
+    - create a node struct and have head and tail and have a dummy node as the head
+    - head mutex and tail mutex
+    - constructor
+    - push
+    - try_pop (sp & ref)
+*/
+template <typename T>
+class NodeQueue {
+    private:
+        struct Node {
+            std::shared_ptr<T> data;
+            std::shared_ptr<Node> next;
+            Node() : next(nullptr) {};
+            Node(T val) : data(std::make_shared<T>(std::move(val))), next(nullptr) {};
+        };
+
+        std::shared_ptr<Node> head;
+        Node* tail;
+        std::mutex head_mu;
+        std::mutex tail_mu;
+
+        Node* get_tail() {
+            std::lock_guard<std::mutex> lk(tail_mu);
+            return tail;
+        }
+
+    public:
+        NodeQueue() : head(std::make_shared<Node>()), tail(head.get()){};     
+        
+        void push(T value) {
+            std::shared_ptr<Node> nxt = std::make_shared<Node>();
+            std::lock_guard<std::mutex> lk(tail_mu);
+            tail->data = std::make_shared<T>(std::move(value));
+            tail->next = nxt;
+            tail = nxt.get();
+        };
+
+        bool try_pop(T& value) {
+            std::unique_lock<std::mutex> hlk(head_mu);
+            if (head.get() == get_tail()) {
+                return false;
+            }
+            std::shared_ptr<Node> nxt = head.get()->next;
+            value = std::move(*(head->data));
+            head = nxt;
+            return true;
+        };
+
+        std::shared_ptr<T> try_pop() {
+            std::unique_lock<std::mutex> hlk(head_mu);
+            if (head.get() == get_tail()) {
+                return nullptr;
+            }
+            std::shared_ptr<Node> nxt = head.get()->next;
+            std::shared_ptr<T> res = head->data;
+            head = nxt;
+            return res;
+        };
+};
