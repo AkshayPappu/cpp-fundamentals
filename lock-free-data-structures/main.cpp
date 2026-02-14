@@ -1,4 +1,4 @@
-#include "LockFreeStack.hpp"
+#include "LockFreeStack2.hpp"
 #include <iostream>
 #include <thread>
 #include <vector>

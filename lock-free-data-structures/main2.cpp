@@ -1,4 +1,4 @@
-#include "LockFreeQueue.hpp"
+#include "LockFreeQueue2.hpp"
 #include <iostream>
 #include <thread>
 #include <vector>
